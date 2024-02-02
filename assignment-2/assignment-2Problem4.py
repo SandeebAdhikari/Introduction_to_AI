@@ -1,106 +1,133 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def generate_linear_data(num_samples=100, noise=0.1):
-    np.random.seed(42)
-    X = 2 * np.random.rand(num_samples, 1)
-    y = 4 + 3 * X + np.random.randn(num_samples, 1) * noise
-    return X, y
-
-def compute_cost(X, y, theta):
-    m = len(y)
-    predictions = X.dot(theta)
-    cost = (1/(2*m)) * np.sum(np.square(predictions - y))
-    return cost
-
-def stochastic_gradient_descent(X, y, theta, learning_rate=0.01, epochs=100):
-    m = len(y)
-    cost_history = np.zeros(epochs)
+# Define the linear regression model
+class LinearRegression:
+    def __init__(self):
+        self.w = None
     
-    for epoch in range(epochs):
-        for i in range(m):
-            random_index = np.random.randint(m)
-            X_i = X[random_index].reshape(1, -1)
-            y_i = y[random_index].reshape(1, -1)
-            prediction = np.dot(X_i, theta)
-            theta = theta - (1/m) * learning_rate * (X_i.T.dot((prediction - y_i)))
-        cost_history[epoch] = compute_cost(X, y, theta)
-    return theta, cost_history
-
-def stochastic_gradient_descent_momentum(X, y, theta, learning_rate=0.01, epochs=100, momentum=0.9):
-    m = len(y)
-    cost_history = np.zeros(epochs)
-    velocity = np.zeros_like(theta)
+    def forward(self, x):
+        return np.dot(x, self.w)
     
-    for epoch in range(epochs):
-        for i in range(m):
-            random_index = np.random.randint(m)
-            X_i = X[random_index].reshape(1, -1)
-            y_i = y[random_index].reshape(1, -1)
-            prediction = np.dot(X_i, theta)
-            gradient = X_i.T.dot((prediction - y_i))
-            velocity = momentum * velocity + learning_rate * gradient
-            theta = theta - velocity
-        cost_history[epoch] = compute_cost(X, y, theta)
-    return theta, cost_history
-
-def stochastic_gradient_descent_adam(X, y, theta, learning_rate=0.01, epochs=100, beta1=0.9, beta2=0.999, epsilon=1e-8):
-    m = len(y)
-    cost_history = np.zeros(epochs)
-    m_t = np.zeros_like(theta)
-    v_t = np.zeros_like(theta)
-    t = 0
+    def compute_loss(self, y_pred, y_true):
+        return np.mean((y_pred - y_true) ** 2)
     
-    for epoch in range(epochs):
-        for i in range(m):
-            random_index = np.random.randint(m)
-            X_i = X[random_index].reshape(1, -1)
-            y_i = y[random_index].reshape(1, -1)
-            prediction = np.dot(X_i, theta)
-            gradient = X_i.T.dot((prediction - y_i))
-            t += 1
-            m_t = beta1 * m_t + (1 - beta1) * gradient
-            v_t = beta2 * v_t + (1 - beta2) * (gradient ** 2)
-            m_cap = m_t / (1 - (beta1 ** t))
-            v_cap = v_t / (1 - (beta2 ** t))
-            theta = theta - (learning_rate * m_cap) / (np.sqrt(v_cap) + epsilon)
-        cost_history[epoch] = compute_cost(X, y, theta)
-    return theta, cost_history
+    def backward(self, x, y_pred, y_true):
+        return np.dot(x.T, y_pred - y_true) / len(x)
 
-# Generate some linear data
-X, y = generate_linear_data()
+# Baseline SGD
+def sgd_update(model, gradient, learning_rate):
+    model.w -= learning_rate * gradient
 
-# Hyperparameters
+# Momentum update
+def momentum_update(model, gradient, learning_rate, momentum, velocity):
+    velocity = momentum * velocity - learning_rate * gradient
+    model.w += velocity
+
+# Adam update
+def adam_update(model, gradient, learning_rate, beta1, beta2, epsilon, m, v, t):
+    m = beta1 * m + (1 - beta1) * gradient
+    v = beta2 * v + (1 - beta2) * (gradient ** 2)
+    m_hat = m / (1 - beta1 ** t)
+    v_hat = v / (1 - beta2 ** t)
+    model.w -= (learning_rate / (np.sqrt(v_hat) + epsilon)) * m_hat
+    return m, v
+
+# Define the training data generation function
+def create_toy_data(func, sample_size, std, domain=None):
+    if domain is None:
+        domain = [0, 1]
+    x = np.linspace(domain[0], domain[1], sample_size)
+    np.random.shuffle(x)
+    y = func(x) + np.random.normal(scale=std, size=x.shape)
+    return x, y
+
+def sinusoidal(x):
+    return np.sin(2 * np.pi * x)
+
+# Generate training data
+x_train, y_train = create_toy_data(sinusoidal, 10, 0.25)
+
+# Define hyperparameters
 learning_rate = 0.01
-epochs = 100
 momentum = 0.9
 beta1 = 0.9
 beta2 = 0.999
 epsilon = 1e-8
+epochs = 1000
 
-# Initial theta
-theta = np.random.randn(2, 1)
+# Initialize linear regression model
+model = LinearRegression()
+model.w = np.random.randn(1)  # Initialize weights randomly
 
-# Add bias term to X
-X_b = np.c_[np.ones((len(X), 1)), X]
+# Training loop for Baseline SGD
+loss_history_sgd = []
+for epoch in range(epochs):
+    for x, y_true in zip(x_train, y_train):
+        x = np.array([x])  # Convert x to a 2D array
+        y_pred = model.forward(x)
+        gradient = model.backward(x, y_pred, y_true)
+        sgd_update(model, gradient, learning_rate)
+    y_pred_epoch = model.forward(x_train[:, np.newaxis])
+    loss_epoch = model.compute_loss(y_pred_epoch, y_train)
+    loss_history_sgd.append(loss_epoch)
 
-# Run baseline SGD
-theta_sgd, cost_history_sgd = stochastic_gradient_descent(X_b, y, theta, learning_rate, epochs)
+# Initialize linear regression model for Momentum
+model = LinearRegression()
+model.w = np.random.randn(1)  # Initialize weights randomly
+velocity = 0
 
-# Run SGD with momentum
-theta_momentum, cost_history_momentum = stochastic_gradient_descent_momentum(X_b, y, theta, learning_rate, epochs, momentum)
+# Training loop for Momentum
+loss_history_momentum = []
+for epoch in range(epochs):
+    for x, y_true in zip(x_train, y_train):
+        x = np.array([x])  # Convert x to a 2D array
+        y_pred = model.forward(x)
+        gradient = model.backward(x, y_pred, y_true)
+        momentum_update(model, gradient, learning_rate, momentum, velocity)
+    y_pred_epoch = model.forward(x_train[:, np.newaxis])
+    loss_epoch = model.compute_loss(y_pred_epoch, y_train)
+    loss_history_momentum.append(loss_epoch)
 
-# Run Adam optimization
-theta_adam, cost_history_adam = stochastic_gradient_descent_adam(X_b, y, theta, learning_rate, epochs, beta1, beta2, epsilon)
+# Initialize linear regression model for Adam
+model = LinearRegression()
+model.w = np.random.randn(1)  # Initialize weights randomly
+m = 0
+v = 0
 
-# Plot loss vs epoch for all algorithms
-plt.figure(figsize=(10, 6))
-plt.plot(range(epochs), cost_history_sgd, label='SGD')
-plt.plot(range(epochs), cost_history_momentum, label='SGD with Momentum')
-plt.plot(range(epochs), cost_history_adam, label='Adam')
-plt.xlabel('Epochs')
+# Training loop for Adam
+loss_history_adam = []
+for epoch in range(epochs):
+    for x, y_true in zip(x_train, y_train):
+        x = np.array([x])  # Convert x to a 2D array
+        y_pred = model.forward(x)
+        gradient = model.backward(x, y_pred, y_true)
+        m, v = adam_update(model, gradient, learning_rate, beta1, beta2, epsilon, m, v, epoch + 1)
+    y_pred_epoch = model.forward(x_train[:, np.newaxis])
+    loss_epoch = model.compute_loss(y_pred_epoch, y_train)
+    loss_history_adam.append(loss_epoch)
+
+
+
+# Plot loss versus epoch for Momentum
+plt.figure(figsize=(10, 5))
+plt.plot(loss_history_sgd, label='SGD')
+plt.plot(loss_history_momentum, label='Momentum', color='blue')
+plt.xlabel('Epoch')
 plt.ylabel('Loss')
-plt.title('Loss vs Epochs for Different Optimization Techniques')
+plt.title('Momentum: Loss vs Epoch')
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# Plot loss versus epoch for Adam
+plt.figure(figsize=(10, 5))
+plt.plot(loss_history_sgd, label='SGD')
+plt.plot(loss_history_adam, label='Adam', color='red')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Adam: Loss vs Epoch')
+plt.legend()
+plt.grid(True)
+plt.show()
+
