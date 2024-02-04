@@ -6,14 +6,15 @@ class LinearRegression:
     def __init__(self):
         self.w = None
     
-    def forward(self, x):
-        return np.dot(x, self.w)
+    def forward(self, X):
+        return np.dot(X, self.w)
     
     def compute_loss(self, y_pred, y_true):
         return np.mean((y_pred - y_true) ** 2)
     
-    def backward(self, x, y_pred, y_true):
-        return np.dot(x.T, y_pred - y_true) / len(x)
+    def backward(self, X, y_pred, y_true):
+        gradient = np.dot(X.T, y_pred - y_true) / len(X)
+        return gradient
 
 # Baseline SGD
 def sgd_update(model, gradient, learning_rate):
@@ -48,6 +49,10 @@ def sinusoidal(x):
 # Generate training data
 x_train, y_train = create_toy_data(sinusoidal, 10, 0.25)
 
+# Transform input data to polynomial features
+X_train = np.column_stack((x_train**0, x_train**1, x_train**2, x_train**3))
+input_dim = X_train.shape[1]
+
 # Define hyperparameters
 learning_rate = 0.01
 momentum = 0.9
@@ -56,57 +61,47 @@ beta2 = 0.999
 epsilon = 1e-8
 epochs = 1000
 
-# Initialize linear regression model
-model = LinearRegression()
-model.w = np.random.randn(1)  # Initialize weights randomly
+# Initialize linear regression model for Baseline SGD
+model_sgd = LinearRegression()
+model_sgd.w = np.random.randn(input_dim)  # Initialize weights randomly
+
+# Initialize linear regression model for Momentum
+model_momentum = LinearRegression()
+model_momentum.w = np.random.randn(input_dim)  # Initialize weights randomly
+velocity = 0
+
+# Initialize linear regression model for Adam
+model_adam = LinearRegression()
+model_adam.w = np.random.randn(input_dim)  # Initialize weights randomly
+m = 0
+v = 0
 
 # Training loop for Baseline SGD
 loss_history_sgd = []
 for epoch in range(epochs):
-    for x, y_true in zip(x_train, y_train):
-        x = np.array([x])  # Convert x to a 2D array
-        y_pred = model.forward(x)
-        gradient = model.backward(x, y_pred, y_true)
-        sgd_update(model, gradient, learning_rate)
-    y_pred_epoch = model.forward(x_train[:, np.newaxis])
-    loss_epoch = model.compute_loss(y_pred_epoch, y_train)
+    y_pred_epoch = model_sgd.forward(X_train)
+    loss_epoch = model_sgd.compute_loss(y_pred_epoch, y_train)
     loss_history_sgd.append(loss_epoch)
-
-# Initialize linear regression model for Momentum
-model = LinearRegression()
-model.w = np.random.randn(1)  # Initialize weights randomly
-velocity = 0
+    gradient = model_sgd.backward(X_train, y_pred_epoch, y_train)
+    sgd_update(model_sgd, gradient, learning_rate)
 
 # Training loop for Momentum
 loss_history_momentum = []
 for epoch in range(epochs):
-    for x, y_true in zip(x_train, y_train):
-        x = np.array([x])  # Convert x to a 2D array
-        y_pred = model.forward(x)
-        gradient = model.backward(x, y_pred, y_true)
-        momentum_update(model, gradient, learning_rate, momentum, velocity)
-    y_pred_epoch = model.forward(x_train[:, np.newaxis])
-    loss_epoch = model.compute_loss(y_pred_epoch, y_train)
+    y_pred_epoch = model_momentum.forward(X_train)
+    loss_epoch = model_momentum.compute_loss(y_pred_epoch, y_train)
     loss_history_momentum.append(loss_epoch)
-
-# Initialize linear regression model for Adam
-model = LinearRegression()
-model.w = np.random.randn(1)  # Initialize weights randomly
-m = 0
-v = 0
+    gradient = model_momentum.backward(X_train, y_pred_epoch, y_train)
+    momentum_update(model_momentum, gradient, learning_rate, momentum, velocity)
 
 # Training loop for Adam
 loss_history_adam = []
 for epoch in range(epochs):
-    for x, y_true in zip(x_train, y_train):
-        x = np.array([x])  # Convert x to a 2D array
-        y_pred = model.forward(x)
-        gradient = model.backward(x, y_pred, y_true)
-        m, v = adam_update(model, gradient, learning_rate, beta1, beta2, epsilon, m, v, epoch + 1)
-    y_pred_epoch = model.forward(x_train[:, np.newaxis])
-    loss_epoch = model.compute_loss(y_pred_epoch, y_train)
+    y_pred_epoch = model_adam.forward(X_train)
+    loss_epoch = model_adam.compute_loss(y_pred_epoch, y_train)
     loss_history_adam.append(loss_epoch)
-
+    gradient = model_adam.backward(X_train, y_pred_epoch, y_train)
+    m, v = adam_update(model_adam, gradient, learning_rate, beta1, beta2, epsilon, m, v, epoch + 1)
 
 
 # Plot loss versus epoch for Momentum
@@ -130,4 +125,3 @@ plt.title('Adam: Loss vs Epoch')
 plt.legend()
 plt.grid(True)
 plt.show()
-
