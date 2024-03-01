@@ -15,8 +15,6 @@ class youtubeDownloader:
             stream.download(output_path=self.videoDownloadPath)
             print("Video downloaded successfully!")
 
-            
-            
             if yt.captions:
                 caption = yt.captions.get_by_language_code('a.en')
                 if caption:
