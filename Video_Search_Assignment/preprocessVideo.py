@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 import torch
+import csv
 import torchvision.transforms as T
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from PIL import Image
@@ -10,7 +11,7 @@ from PIL import Image
 torch.set_grad_enabled(False)
 
 # Load the pre-trained model
-model = fasterrcnn_resnet50_fpn(pretrained=True)
+model = fasterrcnn_resnet50_fpn(weights=True)
 model.eval()  # Set the model to evaluation mode
 
 # Define the COCO classes
@@ -104,7 +105,6 @@ def process_and_detect(video_path, frame_sample_rate, resize_dims, model):
 
 # Function to save detections to a CSV file
 def save_detections(detections, save_path):
-    import csv
     with open(save_path, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['vidId', 'frameNum', 'timestamp', 'detectedObjId', 'detectedObjClass', 'confidence', 'bbox info'])
