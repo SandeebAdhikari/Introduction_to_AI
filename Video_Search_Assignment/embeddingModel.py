@@ -1,6 +1,7 @@
 import cv2
 import torch
 import psycopg2
+import io
 import torchvision.transforms as T
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize  # Corrected import here
@@ -111,3 +112,22 @@ criterion = torch.nn.MSELoss()
 
 # Start training
 train_autoencoder(autoencoder, data_loader, optimizer, criterion, epochs=5, device=device)
+
+def image_to_byte_array(image:Image):
+    imgByteArr = io.BytesIO()
+    image.save(imgByteArr, format=image.format)
+    imgByteArr = imgByteArr.getvalue()
+    return imgByteArr
+
+conn = psycopg2.connect("dbname=citus user=citus password='Starter$05")
+cur = conn.cursor()
+
+for cropped_image, embedding in zip(cropped_images, all_embeddings):
+    # Convert the PIL Image to bytes
+    image_data = image_to_byte_array(cropped_image)
+    # Insert into the database
+    cur.execute("INSERT INTO image_embeddings (image_data, embedding) VALUES (%s, %s)", (image_data, embedding))
+
+conn.commit()
+cur.close()
+conn.close()
