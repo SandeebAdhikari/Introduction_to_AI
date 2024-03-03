@@ -65,23 +65,19 @@ def process_video_and_extract_embeddings(video_path, detection_model, autoencode
             # Loop through detections
             for i, (box, score, label) in enumerate(zip(predictions[0]['boxes'], predictions[0]['scores'], predictions[0]['labels'])):
                 if score >= 0.5:  # Confidence threshold
-                    label_id = int(label.item()) - 1  # Adjust label ID for zero-based indexing
-                    # Check if the label ID corresponds to a valid class in COCO_CLASSES
-                    if label_id >= 0 and label_id < len(COCO_CLASSES):
-                        class_name = COCO_CLASSES[label_id]
-                        if class_name in COCO_CLASSES:
-                            # Crop detected object
-                            box = [round(b.item()) for b in box]
-                            cropped_obj = pil_image.crop((box[0], box[1], box[2], box[3]))
+                    class_name = COCO_CLASSES[label]
+                    if class_name in COCO_CLASSES:
+                        # Crop detected object
+                        box = [round(b.item()) for b in box]
+                        cropped_obj = pil_image.crop((box[0], box[1], box[2], box[3]))
                             
-                            cropped_images.append(cropped_obj)
-                            cropped_obj_tensor = transform(cropped_obj).unsqueeze(0).to(device)
+                        cropped_images.append(cropped_obj)
+                        cropped_obj_tensor = transform(cropped_obj).unsqueeze(0).to(device)
 
-                            # Pass cropped object through autoencoder to get embedding
-                            with torch.no_grad():
-                                _, embedding = autoencoder(cropped_obj_tensor)
+                        # Pass cropped object through autoencoder to get embedding
+                        with torch.no_grad():
+                            _, embedding = autoencoder(cropped_obj_tensor)
                             embeddings.append(embedding.squeeze().cpu().numpy())
-            frame_count += 1
     cap.release()
     return embeddings, cropped_images
 
@@ -91,18 +87,15 @@ video_path = [
     '/Users/sandeebadhikari/Documents/cs370-assignments/Video_Search_Assignment/Downloads/YouTube-Videos/Why It’s Usually Hotter In A City  Lets Talk  NPR.mp4'
 ]
 
-all_embeddings = []
-all_cropped_images = []
-
 for path in video_path:
     embeddings, cropped_images = process_video_and_extract_embeddings(path, detection_model, autoencoder, transform, device)
-    all_embeddings.extend(embeddings)  # Aggregate embeddings
-    all_cropped_images.extend(cropped_images)  # Aggregate cropped images
+ 
 
+print(len(cropped_images), len(embeddings))
 
 
 # Now, use all_cropped_images for dataset creation
-dataset = InMemoryCroppedObjectDataset(all_cropped_images, transform=transform)
+dataset = InMemoryCroppedObjectDataset(cropped_images, transform=transform)
 data_loader = DataLoader(dataset, batch_size=4, shuffle=True)
 
 # Initialize your autoencoder and device
@@ -125,7 +118,7 @@ def image_to_byte_array(image:Image):
 conn = psycopg2.connect("dbname=citus user=citus password='Starter$05")
 cur = conn.cursor()
 
-for cropped_image, embedding in zip(cropped_images, all_embeddings):
+for cropped_image, embedding in zip(cropped_images, embeddings):
     # Convert the PIL Image to bytes
     image_data = image_to_byte_array(cropped_image)
     # Insert into the database
