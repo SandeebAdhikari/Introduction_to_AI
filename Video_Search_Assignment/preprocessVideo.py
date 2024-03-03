@@ -11,7 +11,7 @@ from PIL import Image
 torch.set_grad_enabled(False)
 
 # Load the pre-trained model
-model = fasterrcnn_resnet50_fpn(weights=True)
+model = fasterrcnn_resnet50_fpn(weight=True)
 model.eval()  # Set the model to evaluation mode
 
 # Define the COCO classes

@@ -13,7 +13,7 @@ from autoencoder import train_autoencoder
 
 # Initialization
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-detection_model = fasterrcnn_resnet50_fpn(weights=True).to(device).eval()
+detection_model = fasterrcnn_resnet50_fpn(weight=True).to(device).eval()
 autoencoder = ConvAutoencoder().to(device).eval()  # Assuming training is done, and we're in inference mode
 
 
@@ -62,23 +62,25 @@ def process_video_and_extract_embeddings(video_path, detection_model, autoencode
                 predictions = detection_model(img_tensor)
                 
             
-
             # Loop through detections
             for i, (box, score, label) in enumerate(zip(predictions[0]['boxes'], predictions[0]['scores'], predictions[0]['labels'])):
                 if score >= 0.5:  # Confidence threshold
-                    class_name = COCO_CLASSES[label]
-                    if class_name in COCO_CLASSES:
-                        # Crop detected object
-                        box = [round(b.item()) for b in box]
-                        cropped_obj = pil_image.crop((box[0], box[1], box[2], box[3]))
-                        
-                        cropped_images.append(cropped_obj)
-                        cropped_obj_tensor = transform(cropped_obj).unsqueeze(0).to(device)
+                    label_id = int(label.item()) - 1  # Adjust label ID for zero-based indexing
+                    # Check if the label ID corresponds to a valid class in COCO_CLASSES
+                    if label_id >= 0 and label_id < len(COCO_CLASSES):
+                        class_name = COCO_CLASSES[label_id]
+                        if class_name in COCO_CLASSES:
+                            # Crop detected object
+                            box = [round(b.item()) for b in box]
+                            cropped_obj = pil_image.crop((box[0], box[1], box[2], box[3]))
+                            
+                            cropped_images.append(cropped_obj)
+                            cropped_obj_tensor = transform(cropped_obj).unsqueeze(0).to(device)
 
-                        # Pass cropped object through autoencoder to get embedding
-                        with torch.no_grad():
-                            _, embedding = autoencoder(cropped_obj_tensor)
-                        embeddings.append(embedding.squeeze().cpu().numpy())
+                            # Pass cropped object through autoencoder to get embedding
+                            with torch.no_grad():
+                                _, embedding = autoencoder(cropped_obj_tensor)
+                            embeddings.append(embedding.squeeze().cpu().numpy())
     cap.release()
     return embeddings, cropped_images
 
