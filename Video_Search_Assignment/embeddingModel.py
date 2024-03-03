@@ -81,6 +81,7 @@ def process_video_and_extract_embeddings(video_path, detection_model, autoencode
                             with torch.no_grad():
                                 _, embedding = autoencoder(cropped_obj_tensor)
                             embeddings.append(embedding.squeeze().cpu().numpy())
+            frame_count += 1
     cap.release()
     return embeddings, cropped_images
 
