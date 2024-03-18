@@ -1,18 +1,20 @@
-Video Search Assignment
-youtubeDownloader.py -- This download the video of the youtube and the close caption of the video, 
-Downloaded Video: check Downloads/YouTube-Videos
-Downloaded caption: check Downloads/Captions
+## Video Search Assignment
+__youtubeDownloader.py__ -- This python file download youtube video and the close caption of the video
 
-preprocessVideo.py -- This preprocess the video and detects the object of an image that belong to MS COCO classes. 
+### To Access the downloaded youtube video and close caption:
+__Build Docker Image__
+docker build -t youtube-video-downloader .
+
+__On Docker__
+Run the image, then go to Files
+On ./app/Video_Search_Assignment/Downloads/Caption you will find captions 
+and On /app/Video_Search_Assignment/Downloads/YouTube-Videos you will find YouTube Videos
+
+## Detection_Results
+__preprocessVideo.py__ -- This pre-process the video and detects the object of an image that belong to MS COCO classes. 
 Reports the result in the tabular form: [vidId, frameNum, timestamp, detectedObjId, detectedObjClass, confidence, bbox info]
-Downloaded Table: check /Detection_Results
+__Downloaded Table:__ check ./Detection_Results
 
-embeddingModel.py-- It is the main file to execute convolution autoencoder and also to index video image embedding vectors in the database.
-
-autoencoder.py -- It has the code for the autoencoder and to train the autoencoder.
-
-Missing Part:
-Docker compose.
-Demostrating that search. 
-
-Excuse -- I had 3 midterm lined up, so started late. 
+## Train and detect
+__embeddingModel.py__-- It is the main file to execute convolution autoencoder and also to index video image embedding vectors in the database.
+__autoencoder.py__ -- It has the code for the autoencoder and to train the autoencoder.
