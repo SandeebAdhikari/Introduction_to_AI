@@ -7,9 +7,9 @@ from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize  # Corrected import here
 from torch.utils.data import DataLoader
 from PIL import Image
-from autoencoder import ConvAutoencoder
-from autoencoder import InMemoryCroppedObjectDataset
-from autoencoder import train_autoencoder
+from src.autoencoder import ConvAutoencoder
+from src.autoencoder import InMemoryCroppedObjectDataset
+from src.autoencoder import train_autoencoder
 
 # Initialization
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
