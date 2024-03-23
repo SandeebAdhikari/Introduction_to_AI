@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  fastapi-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    ports:
+      - "80:80"
+    volumes:
+      - ./src:/app/src
+      - ./startup.sh:/app/startup.sh
+    command: /bin/bash -c "./startup.sh & uvicorn src.youtubeDownloader:app --host 0.0.0.0 --port 80"
+
+  tensorflow-service:
+    image: tensorflow/tensorflow:latest-gpu-jupyter
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.tensor
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+    command: jupyter notebook --ip='*' --port=8888 --no-browser --allow-root

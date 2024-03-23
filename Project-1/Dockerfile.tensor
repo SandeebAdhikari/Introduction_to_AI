@@ -1,0 +1,25 @@
+# Use an official TensorFlow 2 image with GPU support
+FROM tensorflow/tensorflow:latest-gpu-jupyter
+
+# Install any additional dependencies you might need (this is just an example)
+RUN apt-get update && apt-get install -y \
+    git \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# (Optional) Install additional Python packages
+RUN pip3 install numpy matplotlib
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Make port 8888 available to the world outside this container, e.g., for Jupyter notebooks
+EXPOSE 8888
+RUN pip install jupyter
+RUN pip install notebook
+# Run a command within the container once it starts. For example, start a Jupyter notebook.
+# This is just an example command; adjust it based on your needs.
+CMD ["jupyter", "notebook", "--ip='*'", "--port=8888", "--no-browser", "--allow-root"]
