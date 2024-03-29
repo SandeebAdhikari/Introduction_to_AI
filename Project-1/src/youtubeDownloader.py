@@ -33,8 +33,10 @@ class youtubeDownloader:
                 results.append({"url": videoURL, "error": str(e)})
         return results
 
+
 @app.post("/download-videos/")
 async def download_videos(videoURLs: List[str]):
     downloader = youtubeDownloader()
     results = downloader.downloadVideoWithCaptions(videoURLs)
     return results
+
