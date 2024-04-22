@@ -1,17 +1,12 @@
-FROM pytorch/pytorch:latest
-
-RUN apt-get update && apt-get install -y \
-    git \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip3 install numpy matplotlib
+FROM python:3.9-slim
 
 WORKDIR /app
 
+RUN pip install torch torchvision
+
+RUN pip install samgeo
+RUN pip install rasterio  # Assuming rasterio might be needed for geotiff handling
+
 COPY . /app
 
-EXPOSE 8888
-RUN pip install jupyter notebook
-
-CMD ["jupyter", "notebook", "--ip='*'", "--port=8888", "--no-browser", "--allow-root"]
+CMD ["python", "mask.py"]
