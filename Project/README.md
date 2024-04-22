@@ -6,5 +6,5 @@ Replicated the SAM implementation for satellite imagery.
 
 COLAB filename: replicateSAM.ipynb
 
-#Milestone 3
+## Milestone 3
 COLAB filename: sam.ipynb
